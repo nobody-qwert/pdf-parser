@@ -7,7 +7,6 @@ import fitz
 from dataclasses import dataclass
 import json
 
-
 def get_module_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -32,16 +31,15 @@ class PDFTextExtractor:
         self.max_workers = max_workers
         self.output_dir = Path(output_dir)
         self.logger = get_module_logger("pdf_extraction")
-        self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def save_text_to_file(self, text: str, pdf_path: Path) -> Path:
         output_filename = pdf_path.stem + "_pdf.txt"
         output_path = self.output_dir / output_filename
 
         try:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(text)
-
             print(f"Saved extracted text to {output_path}", flush=True)
             return output_path
         except Exception as e:
@@ -105,7 +103,6 @@ class PDFTextExtractor:
             results.append(result)
         return results
 
-
     def get_extraction_summary(self, results: List[ExtractionResult]) -> Dict:
         successful = [r for r in results if not r.error]
         failed = [r for r in results if r.error]
@@ -116,7 +113,7 @@ class PDFTextExtractor:
             "failed_extractions": len(failed),
             "total_pages_processed": sum(r.page_count for r in successful),
             "total_processing_time": sum(r.extraction_time for r in results),
-            "output_directory": str(self.output_dir),
+            "output_directory": str(self.output_dir) if successful else None,
             "extracted_files": [
                 {"input": r.filename, "output": r.output_path} for r in successful
             ],
@@ -125,7 +122,6 @@ class PDFTextExtractor:
             ]
         }
         return summary
-
 
 def main():
     parser = argparse.ArgumentParser(description="PDF Text Extraction Tool")
@@ -142,12 +138,12 @@ def main():
         return
 
     results = []
+    extractor = PDFTextExtractor(output_dir=args.output)
+
     if args.file:
-        extractor = PDFTextExtractor(output_dir=args.output)
         result = extractor.extract_from_file(args.file)
         results.append(result)
     elif args.directory:
-        extractor = PDFTextExtractor(output_dir=args.output)
         results = extractor.extract_from_directory(args.directory, args.recursive)
     else:
         print("Error: Specify either --file or --directory")
@@ -164,7 +160,8 @@ def main():
         print(f"Processed {summary['total_files']} files.")
         print(f"Successful extractions: {summary['successful_extractions']}")
         print(f"Failed extractions: {summary['failed_extractions']}")
-        print(f"Output directory: {summary['output_directory']}")
+        if summary['output_directory']:
+            print(f"Output directory: {summary['output_directory']}")
 
 
 if __name__ == "__main__":
