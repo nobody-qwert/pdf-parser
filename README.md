@@ -18,19 +18,19 @@ A powerful command-line tool for extracting text from PDF files using Python. It
 
 ### **Extract a Single File:**
 ```bash
-python pdf_text_extractor_cli.py --file example.pdf --json
+python pdf_parser_cli.py --file example.pdf --json
 ```
 
 ### **Extract All PDFs in a Directory:**
 
 ```bash
-python pdf_text_extractor_cli.py --directory my_pdfs --recursive
+python pdf_parser_cli.py --directory my_pdfs --recursive
 ```
 
 ### **Customize Output Directory:**
 
 ```bash
-python pdf_text_extractor_cli.py --file example.pdf --output output_folder
+python pdf_parser_cli.py --file example.pdf --output output_folder
 ```
 
 ## **Installation**
@@ -38,8 +38,8 @@ python pdf_text_extractor_cli.py --file example.pdf --output output_folder
 ### **Clone the repository:**
 
 ```bash
-git clone https://github.com/yourusername/pdf-text-extractor-cli.git
-cd pdf-text-extractor-cli
+https://github.com/lazloalexandru/pdf-parser.git
+cd pdf-parser
 ```
 
 ### **Create a Virtual Environment**
@@ -67,5 +67,8 @@ pip install -r requirements.txt
 ### **Run the tool:**
 
 ```bash
-python pdf_text_extractor_cli.py --help
+python pdf_parser_cli.py --help
 ```
+
+# TODO
+- test recursive

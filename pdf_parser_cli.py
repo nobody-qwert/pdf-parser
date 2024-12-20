@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import sys
@@ -24,18 +25,11 @@ def display_help(run_command):
 ******************************************
 
 Usage:
-{run_command} [OPTIONS]
-
-Options:
---file FILE          Path to the PDF file to extract
---directory DIR      Directory containing PDF files
---recursive          Process files in subdirectories
---output DIR         Output directory (default: extracted_text)
-/?                   Display this help message
+{run_command} <PDF_file_path | Input_Directory> <Output_Directory>
 
 Examples:
-{run_command} --file sample.pdf
-{run_command} --directory ./pdfs
+{run_command} sample.pdf extracted_docs
+{run_command} sample_pdfs extracted_docs
 """
     print(help_text)
 
@@ -51,8 +45,7 @@ class ExtractionResult:
 
 
 class PDFTextExtractor:
-    def __init__(self, max_workers=4, output_dir="extracted_text"):
-        self.max_workers = max_workers
+    def __init__(self, output_dir="extracted_text"):
         self.output_dir = Path(output_dir)
         self.logger = get_module_logger("pdf_extraction")
 
@@ -84,9 +77,7 @@ class PDFTextExtractor:
             with fitz.open(pdf_path) as doc:
                 text_content = [page.get_text() for page in doc]
                 full_text = "\n".join(text_content)
-
                 output_path = self.save_text_to_file(full_text, pdf_path)
-
                 result = ExtractionResult(
                     filename=pdf_path.name,
                     text=full_text,
@@ -96,7 +87,6 @@ class PDFTextExtractor:
                 )
                 print(f"[OK] Processed \"{pdf_path.name}\" -> {result.page_count} pages")
                 return result
-
         except Exception as e:
             print(f"[ERROR] Failed to process {pdf_path.name}: {str(e)}")
             return ExtractionResult(
@@ -149,43 +139,35 @@ class PDFTextExtractor:
 
 
 def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="PDF Text Extraction Tool")
-    parser.add_argument("--file", type=str, help="Path to the PDF file to extract")
-    parser.add_argument("--directory", type=str, help="Directory containing PDF files")
-    parser.add_argument("--recursive", help="Process files in subdirectories")
-    parser.add_argument("--output", type=str, default="extracted_text", help="Output directory")
-    parser.add_argument("--/?", help="Display help message")
-
-    args = parser.parse_args()
-
     if sys.argv[0].endswith('.exe'):
         run_command = os.path.basename(sys.argv[0])
 
-        if args.__dict__.get("/?") or len(sys.argv) < 2:
+        if len(sys.argv) != 3:
             display_help(run_command)
             return
     else:
         run_command = "python.exe " + sys.argv[0]
 
-        if args.__dict__.get("/?") or len(sys.argv) < 2:
+        if len(sys.argv) != 3:
             display_help(run_command)
             return
 
-    if args.directory and not Path(args.directory).exists():
-        print(f"Error: Directory '{args.directory}' does not exist.")
+    input_path = Path(sys.argv[1])
+    output_dir = Path(sys.argv[2])
+
+    if not input_path.exists():
+        print(f"Error: Path '{input_path}' does not exist.")
         return
 
     results = []
-    extractor = PDFTextExtractor(output_dir=args.output)
+    extractor = PDFTextExtractor(output_dir=output_dir)
 
-    if args.file:
-        result = extractor.extract_from_file(args.file)
-        results.append(result)
-    elif args.directory:
-        results = extractor.extract_from_directory(args.directory, args.recursive)
+    if input_path.is_file():
+        results.append(extractor.extract_from_file(input_path))
+    elif input_path.is_dir():
+        results = extractor.extract_from_directory(input_path)
     else:
-        print("Error: Specify either --file or --directory")
+        print("Error: Specify a valid file or directory")
         return
 
     if not results:
