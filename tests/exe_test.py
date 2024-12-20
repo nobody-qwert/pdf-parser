@@ -1,8 +1,4 @@
 import subprocess
-from pathlib import Path
-
-
-import subprocess
 
 
 def execute_command(command):
