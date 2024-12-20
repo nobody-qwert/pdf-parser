@@ -163,7 +163,7 @@ cython_debug/
 .idea/
 
 text/
-test_docs/
+tests/test_docs/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
