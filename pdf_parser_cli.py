@@ -5,7 +5,6 @@ from typing import Union, List, Dict, Optional
 from datetime import datetime
 import fitz
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor
 import json
 
 
@@ -43,10 +42,10 @@ class PDFTextExtractor:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(text)
 
-            self.logger.info(f"Saved extracted text to {output_path}")
+            print(f"Saved extracted text to {output_path}", flush=True)
             return output_path
         except Exception as e:
-            self.logger.error(f"Error saving text file {output_path}: {str(e)}")
+            print(f"Error saving text file {output_path}: {str(e)}", flush=True)
             raise
 
     def extract_from_file(self, pdf_path: Union[str, Path]) -> ExtractionResult:
@@ -73,11 +72,11 @@ class PDFTextExtractor:
                     output_path=str(output_path),
                     extraction_time=(datetime.now() - start_time).total_seconds()
                 )
-                self.logger.info(f"Successfully extracted {result.page_count} pages from {pdf_path.name}")
+                print(f"[OK] Processed \"{pdf_path.name}\" -> {result.page_count} pages")
                 return result
 
         except Exception as e:
-            self.logger.error(f"Error processing {pdf_path}: {str(e)}")
+            print(f"[ERROR] Failed to process {pdf_path.name}: {str(e)}")
             return ExtractionResult(
                 filename=pdf_path.name,
                 text="",
@@ -104,14 +103,8 @@ class PDFTextExtractor:
         for pdf_file in pdf_files:
             result = self.extract_from_file(pdf_file)
             results.append(result)
-
-            # Log progress to stdout
-            if result.error:
-                print(f"[ERROR] Failed to process: {pdf_file} -> {result.error}")
-            else:
-                print(f"[OK] Processed: {pdf_file} -> Pages: {result.page_count}")
-
         return results
+
 
     def get_extraction_summary(self, results: List[ExtractionResult]) -> Dict:
         successful = [r for r in results if not r.error]

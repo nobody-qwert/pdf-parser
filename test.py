@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+
 def run_extraction(input_folder: str, output_subfolder: str = "text"):
     input_path = Path(input_folder)
     output_path = input_path / output_subfolder
@@ -27,6 +28,7 @@ def run_extraction(input_folder: str, output_subfolder: str = "text"):
 
     except subprocess.CalledProcessError as e:
         print(f"Extraction failed: {e.stderr}")
+
 
 if __name__ == "__main__":
     input_folder = "test_docs"
