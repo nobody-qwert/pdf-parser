@@ -1,14 +1,11 @@
-import argparse
 import logging
 from pathlib import Path
-from typing import Union, List, Dict, Optional
 from datetime import datetime
 import fitz
-from dataclasses import dataclass
 import json
 
 
-def get_module_logger(name: str) -> logging.Logger:
+def get_module_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
@@ -18,23 +15,23 @@ def get_module_logger(name: str) -> logging.Logger:
     return logger
 
 
-@dataclass
 class ExtractionResult:
-    filename: str
-    text: str
-    page_count: int
-    output_path: Optional[str] = None
-    error: str = None
-    extraction_time: float = 0.0
+    def __init__(self, filename, text, page_count, output_path=None, error=None, extraction_time=0.0):
+        self.filename = filename
+        self.text = text
+        self.page_count = page_count
+        self.output_path = output_path
+        self.error = error
+        self.extraction_time = extraction_time
 
 
 class PDFTextExtractor:
-    def __init__(self, max_workers: int = 4, output_dir: Union[str, Path] = "extracted_text"):
+    def __init__(self, max_workers=4, output_dir="extracted_text"):
         self.max_workers = max_workers
         self.output_dir = Path(output_dir)
         self.logger = get_module_logger("pdf_extraction")
 
-    def save_text_to_file(self, text: str, pdf_path: Path) -> Path:
+    def save_text_to_file(self, text, pdf_path):
         output_filename = pdf_path.stem + "_pdf.txt"
         output_path = self.output_dir / output_filename
 
@@ -48,7 +45,7 @@ class PDFTextExtractor:
             print(f"Error saving text file {output_path}: {str(e)}", flush=True)
             raise
 
-    def extract_from_file(self, pdf_path: Union[str, Path]) -> ExtractionResult:
+    def extract_from_file(self, pdf_path):
         start_time = datetime.now()
         pdf_path = Path(pdf_path)
 
@@ -85,7 +82,7 @@ class PDFTextExtractor:
                 extraction_time=(datetime.now() - start_time).total_seconds()
             )
 
-    def extract_from_directory(self, directory: Union[str, Path], recursive: bool = False) -> List[ExtractionResult]:
+    def extract_from_directory(self, directory, recursive=False):
         directory = Path(directory)
         if not directory.exists():
             raise NotADirectoryError(f"Directory not found: {directory}")
@@ -105,7 +102,7 @@ class PDFTextExtractor:
             results.append(result)
         return results
 
-    def get_extraction_summary(self, results: List[ExtractionResult]) -> Dict:
+    def get_extraction_summary(self, results):
         successful = [r for r in results if not r.error]
         failed = [r for r in results if r.error]
 
@@ -125,7 +122,9 @@ class PDFTextExtractor:
         }
         return summary
 
+
 def main():
+    import argparse
     parser = argparse.ArgumentParser(description="PDF Text Extraction Tool")
     parser.add_argument("--file", type=str, help="Path to the PDF file to extract")
     parser.add_argument("--directory", type=str, help="Directory containing PDF files")
