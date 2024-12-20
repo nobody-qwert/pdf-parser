@@ -7,6 +7,7 @@ import fitz
 from dataclasses import dataclass
 import json
 
+
 def get_module_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -15,6 +16,7 @@ def get_module_logger(name: str) -> logging.Logger:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
+
 
 @dataclass
 class ExtractionResult:

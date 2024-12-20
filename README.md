@@ -42,6 +42,22 @@ git clone https://github.com/yourusername/pdf-text-extractor-cli.git
 cd pdf-text-extractor-cli
 ```
 
+### **Create a Virtual Environment**
+
+In your project directory, create a virtual environment to isolate your project dependencies:
+```bash
+python -m venv .venv
+```
+
+### **Activate the Virtual Environment**
+
+To activate the virtual environment, run:
+```bash
+.venv\Scripts\activate
+```
+
+Once activated, you should see the environment name (e.g., .venv) in your command prompt.
+
 ### **Install dependencies:**
 
 ```bash
