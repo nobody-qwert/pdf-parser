@@ -164,6 +164,7 @@ cython_debug/
 
 text/
 tests/test_docs/
+pdf-parser.exe
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
