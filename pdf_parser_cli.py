@@ -1,8 +1,9 @@
 import logging
+import os
+import sys
 from pathlib import Path
 from datetime import datetime
 import fitz
-import json
 
 
 def get_module_logger(name):
@@ -13,6 +14,30 @@ def get_module_logger(name):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
+
+
+def display_help(run_command):
+    help_text = f"""******************************************
+** \                                   /**
+**  *    PDF Text Extraction Tool     * **
+** /                                   \**
+******************************************
+
+Usage:
+{run_command} [OPTIONS]
+
+Options:
+--file FILE          Path to the PDF file to extract
+--directory DIR      Directory containing PDF files
+--recursive          Process files in subdirectories
+--output DIR         Output directory (default: extracted_text)
+/?                   Display this help message
+
+Examples:
+{run_command} --file sample.pdf
+{run_command} --directory ./pdfs
+"""
+    print(help_text)
 
 
 class ExtractionResult:
@@ -128,11 +153,24 @@ def main():
     parser = argparse.ArgumentParser(description="PDF Text Extraction Tool")
     parser.add_argument("--file", type=str, help="Path to the PDF file to extract")
     parser.add_argument("--directory", type=str, help="Directory containing PDF files")
-    parser.add_argument("--recursive", action='store_true', help="Process files in subdirectories")
+    parser.add_argument("--recursive", help="Process files in subdirectories")
     parser.add_argument("--output", type=str, default="extracted_text", help="Output directory")
-    parser.add_argument("--json", action='store_true', help="Return results as JSON")
+    parser.add_argument("--/?", help="Display help message")
 
     args = parser.parse_args()
+
+    if sys.argv[0].endswith('.exe'):
+        run_command = os.path.basename(sys.argv[0])
+
+        if args.__dict__.get("/?") or len(sys.argv) < 2:
+            display_help(run_command)
+            return
+    else:
+        run_command = "python.exe " + sys.argv[0]
+
+        if args.__dict__.get("/?") or len(sys.argv) < 2:
+            display_help(run_command)
+            return
 
     if args.directory and not Path(args.directory).exists():
         print(f"Error: Directory '{args.directory}' does not exist.")
@@ -155,14 +193,11 @@ def main():
 
     summary = extractor.get_extraction_summary(results)
 
-    if args.json:
-        print(json.dumps(summary, indent=2))
-    else:
-        print(f"Processed {summary['total_files']} files.")
-        print(f"Successful extractions: {summary['successful_extractions']}")
-        print(f"Failed extractions: {summary['failed_extractions']}")
-        if summary['output_directory']:
-            print(f"Output directory: {summary['output_directory']}")
+    print(f"Processed {summary['total_files']} files.")
+    print(f"Successful extractions: {summary['successful_extractions']}")
+    print(f"Failed extractions: {summary['failed_extractions']}")
+    if summary['output_directory']:
+        print(f"Output directory: {summary['output_directory']}")
 
 
 if __name__ == "__main__":
