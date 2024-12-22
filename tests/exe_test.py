@@ -1,3 +1,4 @@
+import os.path
 import subprocess
 
 
@@ -26,16 +27,13 @@ def test_1():
     input_folder = "test_docs"
     pdf_file = "test_docs/fiba.pdf"
     output_folder = "test_docs/text"
+    output_txt_file = os.path.join(output_folder, "extracted.txt")
 
     exe_path = "../build_executable/dist/pdf-parser.exe"
-    command = [exe_path]
-    execute_command(command)
-    command = [exe_path, "aa", "bb", "ccccc"]
-    execute_command(command)
-    command = [exe_path, pdf_file, output_folder]
-    execute_command(command)
-    command = [exe_path, input_folder, output_folder]
-    execute_command(command)
+    execute_command([exe_path])
+    execute_command([exe_path, "aa", "bb", "ccccc"])
+    execute_command([exe_path, input_folder, output_folder])
+    execute_command([exe_path, pdf_file, output_txt_file])
 
 
 if __name__ == "__main__":
