@@ -1,16 +1,21 @@
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 from datetime import datetime
 import fitz
 
+MAX_PATH_LENGTH = 4096
+MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024
+MAX_FILE_SIZE_MB = int(MAX_FILE_SIZE_BYTES / (1024 * 1024))
+
 
 def display_help(run_command):
     help_text = f"""******************************************
-** \                                   /**
+** \\                                   /**
 **  *    PDF Text Extraction Tool     * **
-** /                                   \**
+** /                                   \\**
 ******************************************
 
 Usage:
@@ -19,38 +24,52 @@ Usage:
 Examples:
 {run_command} sample.pdf extracted_docs/extracted.txt
 {run_command} sample_pdfs extracted_docs
+
+Note: Maximum PDF file size supported is {MAX_FILE_SIZE_MB} MB.
 """
     print(help_text)
 
-
 def save_text_to_file(text, output_path):
     try:
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        if len(str(output_path)) > MAX_PATH_LENGTH:
+            raise ValueError("Output path is too long.")
+        if re.search(r'[<>:"|?*]', str(output_path)):
+            raise ValueError("Output path contains invalid characters.")
 
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(text)
+
         print(f"Saved extracted text to {output_path}", flush=True)
         return output_path
+
     except Exception as e:
         print(f"Error saving text file {output_path}: {str(e)}", flush=True)
         raise
 
-
 def extract_from_file(pdf_path, output_path):
     start_time = datetime.now()
     pdf_path = Path(pdf_path)
-
     try:
         if not pdf_path.exists():
             raise FileNotFoundError(f"File not found: {pdf_path}")
-
+        if len(str(pdf_path)) > MAX_PATH_LENGTH:
+            raise ValueError("Input path is too long.")
+        if re.search(r'[<>:"|?*]', str(pdf_path)):
+            raise ValueError("Input path contains invalid characters.")
         if pdf_path.suffix.lower() != '.pdf':
             raise ValueError(f"Not a PDF file: {pdf_path}")
-
+        if pdf_path.stat().st_size > MAX_FILE_SIZE_BYTES:
+            raise ValueError(
+                f"File size too large: {pdf_path.name} "
+                f"(max allowed is {MAX_FILE_SIZE_MB} MB)."
+            )
         with fitz.open(pdf_path) as doc:
             text_content = [page.get_text() for page in doc]
             full_text = "\n".join(text_content)
+
             output_path = save_text_to_file(full_text, output_path)
+
             result = ExtractionResult(
                 filename=pdf_path.name,
                 text=full_text,
@@ -58,8 +77,10 @@ def extract_from_file(pdf_path, output_path):
                 output_path=str(output_path),
                 extraction_time=(datetime.now() - start_time).total_seconds()
             )
+
             print(f"[OK] Processed \"{pdf_path.name}\" -> {result.page_count} pages")
             return result
+
     except Exception as e:
         print(f"[ERROR] Failed to process {pdf_path.name}: {str(e)}")
         return ExtractionResult(
@@ -70,11 +91,19 @@ def extract_from_file(pdf_path, output_path):
             extraction_time=(datetime.now() - start_time).total_seconds()
         )
 
-
 def extract_from_directory(directory, output_dir, recursive=False):
     directory = Path(directory)
+
     if not directory.exists():
         raise NotADirectoryError(f"Directory not found: {directory}")
+    if len(str(directory)) > MAX_PATH_LENGTH:
+        raise ValueError("Input path is too long.")
+    if re.search(r'[<>:"|?*]', str(directory)):
+        raise ValueError("Input path contains invalid characters.")
+    if len(str(output_dir)) > MAX_PATH_LENGTH:
+        raise ValueError("Output path is too long.")
+    if re.search(r'[<>:"|?*]', str(output_dir)):
+        raise ValueError("Output path contains invalid characters.")
 
     pattern = '**/*.pdf' if recursive else '*.pdf'
     pdf_files = list(directory.glob(pattern))
@@ -84,15 +113,32 @@ def extract_from_directory(directory, output_dir, recursive=False):
         return []
 
     print(f"Found {len(pdf_files)} PDF files to process")
-
     results = []
+
     for pdf_file in pdf_files:
-        output_filename = Path(pdf_file).stem + "_pdf.txt"
+        try:
+            if pdf_file.stat().st_size > MAX_FILE_SIZE_BYTES:
+                raise ValueError(
+                    f"File size too large: {pdf_file.name} "
+                    f"(max allowed is {MAX_FILE_SIZE_MB} MB)."
+                )
+        except Exception as e:
+            r = ExtractionResult(
+                filename=pdf_file.name,
+                text="",
+                page_count=0,
+                error=str(e)
+            )
+            results.append(r)
+            print(f"[ERROR] Failed to process {pdf_file.name}: {str(e)}")
+            continue
+
+        output_filename = pdf_file.stem + "_pdf.txt"
         output_path = output_dir / output_filename
         result = extract_from_file(pdf_file, output_path)
         results.append(result)
-    return results
 
+    return results
 
 def get_extraction_summary(results):
     successful = [r for r in results if not r.error]
@@ -113,9 +159,16 @@ def get_extraction_summary(results):
     }
     return summary
 
-
 class ExtractionResult:
-    def __init__(self, filename, text, page_count, output_path=None, error=None, extraction_time=0.0):
+    def __init__(
+        self,
+        filename,
+        text,
+        page_count,
+        output_path=None,
+        error=None,
+        extraction_time=0.0
+    ):
         self.filename = filename
         self.text = text
         self.page_count = page_count
@@ -123,24 +176,28 @@ class ExtractionResult:
         self.error = error
         self.extraction_time = extraction_time
 
-
-
 def main():
     if sys.argv[0].endswith('.exe'):
         run_command = os.path.basename(sys.argv[0])
-
         if len(sys.argv) != 3:
             display_help(run_command)
             return
     else:
         run_command = "python.exe " + sys.argv[0]
-
         if len(sys.argv) != 3:
             display_help(run_command)
             return
 
     input_path = Path(sys.argv[1])
     output_path = Path(sys.argv[2])
+
+    if len(str(input_path)) > MAX_PATH_LENGTH or len(str(output_path)) > MAX_PATH_LENGTH:
+        print("Error: Path is too long.")
+        return
+
+    if re.search(r'[<>:"|?*]', str(input_path)) or re.search(r'[<>:"|?*]', str(output_path)):
+        print("Error: Path contains invalid characters.")
+        return
 
     if not input_path.exists():
         print(f"Error: Path '{input_path}' does not exist.")
@@ -149,6 +206,12 @@ def main():
     results = []
 
     if input_path.is_file():
+        if input_path.stat().st_size > MAX_FILE_SIZE_BYTES:
+            print(
+                f"Error: File size too large. "
+                f"Maximum allowed is {MAX_FILE_SIZE_MB} MB."
+            )
+            return
         results.append(extract_from_file(input_path, output_path))
     elif input_path.is_dir():
         results = extract_from_directory(input_path, output_path)
@@ -160,11 +223,9 @@ def main():
         return
 
     summary = get_extraction_summary(results)
-
     print(f"Processed {summary['total_files']} files.")
     print(f"Successful extractions: {summary['successful_extractions']}")
     print(f"Failed extractions: {summary['failed_extractions']}")
-
 
 if __name__ == "__main__":
     main()
