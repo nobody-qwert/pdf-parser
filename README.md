@@ -14,7 +14,7 @@ A powerful command-line tool for extracting text from PDF files using Python. It
 
 ### **Extract a Single File:**
 ```bash
-python pdf_parser_cli.py example.pdf out_dir
+python pdf_parser_cli.py example.pdf out.txt
 ```
 
 ### **Extract All PDFs in a Directory:**
