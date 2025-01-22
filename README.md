@@ -7,10 +7,6 @@ A powerful command-line tool for extracting text from PDF files using Python. It
 ## **Features**
 
 - 🗂 **Single or Batch Extraction**: Extract text from a single file or an entire directory of PDFs.
-- 🔍 **Recursive Search**: Process files in subdirectories with the `--recursive` flag.
-- 📊 **Extraction Summary**: Receive comprehensive reports, including success and failure statistics.
-- 🖨 **JSON Output**: Print results in JSON format for easy integration into other tools or scripts.
-- 🚀 **Multithreading**: Fast processing with support for multiple threads.
 
 ---
 
